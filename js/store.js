@@ -12,7 +12,7 @@ export const PERIODS = { '1m': 1, '6m': 6, '1y': 12 }; // goal length in months
 const MAX_REPS = 1e7;
 const NAME_MAX = 40;
 
-const PREF_DEFAULTS = { haptics: true, range: '1m', trendsEx: null, lastBackup: null, installDismissed: false };
+const PREF_DEFAULTS = { haptics: true, range: '1m', trendsEx: null, selected: null, lastBackup: null, installDismissed: false };
 
 export const emptyData = () => ({ exercises: [] });
 const uid = () => Date.now().toString(36).slice(-5) + Math.random().toString(36).slice(2, 7);

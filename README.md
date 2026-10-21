@@ -2,7 +2,7 @@
 
 A fast, offline rep counter for iPhone and Android. It's a plain web app (PWA), so it needs no app store, no account and no build step.
 
-- **Count**: every exercise shows today's reps and the all-time total, with big **+1 / +5 / +10** buttons. Taps in quick succession form a set that you can undo in one go.
+- **Count**: the list shows every exercise with today's reps and the all-time total. Tap one to select it, then use the big **+1 / +5 / +10** buttons fixed at the bottom of the screen, so scrolling the list can never press them. Taps in quick succession form a set that you can undo in one go.
 - **Trends**: last 7 days, all-time total, best day, streak, and a bar chart for the last 30 days, 26 weeks or 12 months.
 - **Goals**: set a total-rep goal per exercise for **1 month, 6 months or 1 year**. A goal repeats every period from its start date and shows progress, pace and the reps per day needed to finish.
 - **Share**: the share button at the top makes an image of today's reps and goal progress and opens your phone's share sheet (where sharing isn't available, it saves the image instead).

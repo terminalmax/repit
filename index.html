@@ -55,7 +55,7 @@
         </button>
       </div>
 
-      <ul class="ex-list" id="ex-list"></ul>
+      <ul class="ex-list" id="ex-list" role="radiogroup" aria-label="Exercises" hidden></ul>
 
       <button type="button" class="add-ex" id="add-ex" hidden>
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -114,6 +114,28 @@
       </div>
     </section>
   </main>
+
+  <!-- Counting pad: fixed above the tabs, works on the exercise selected in the list -->
+  <section class="pad" id="pad" aria-label="Add reps" hidden>
+    <div class="pad-inner">
+      <div class="pad-head">
+        <button type="button" class="pad-ex" id="pad-ex">
+          <b id="pad-count">0</b>
+          <span id="pad-name"></span>
+          <svg class="ico fill" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        </button>
+        <button type="button" class="undo" id="pad-undo" hidden>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+          <span>Undo <b id="pad-undo-n"></b></span>
+        </button>
+      </div>
+      <div class="pad-btns">
+        <button type="button" class="add" data-add="1">+1</button>
+        <button type="button" class="add" data-add="5">+5</button>
+        <button type="button" class="add" data-add="10">+10</button>
+      </div>
+    </div>
+  </section>
 
   <nav class="tabbar" aria-label="Pages">
     <button type="button" class="tab" data-tab="count">
@@ -262,10 +284,10 @@
         </div>
       </section>
 
-      <section class="set-sec">
+      <section class="set-sec" id="haptics-sec">
         <label class="toggle-row">
           <span>Haptic feedback<small>A light tap on every count, where the phone supports it</small></span>
-          <input type="checkbox" class="toggle" id="pref-haptics" switch>
+          <input type="checkbox" class="toggle" id="pref-haptics">
         </label>
       </section>
 

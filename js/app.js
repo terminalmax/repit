@@ -8,7 +8,7 @@ import {
 import { drawBars } from './chart.js';
 import { drawShareImage } from './share.js';
 
-const VERSION = '1.2.1';
+const VERSION = '1.3.0';
 const STEPS = [1, 5, 10];
 const SET_MS = 6000; // taps on one exercise closer together than this form one undoable set
 const SUGGESTIONS = ['Push-ups', 'Squats', 'Pull-ups', 'Sit-ups', 'Burpees', 'Lunges', 'Dips', 'Crunches', 'Jumping jacks', 'Kettlebell swings'];
@@ -41,8 +41,6 @@ const rangeFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'n
 const fmtRange = (a, b) => rangeFormat.formatRange?.(dateOf(a), dateOf(b)) ?? `${longDate(a)} – ${longDate(b)}`;
 
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-// Safari has no Vibration API, but tapping a native switch control plays a system haptic (iOS 17.4+).
-const switchHaptics = isIOS && 'switch' in HTMLInputElement.prototype;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const weekFirstDay = (() => {
@@ -74,7 +72,8 @@ let tab = 'count';
 const sets = new Map(); // exercise id → { day, n, timer }: reps of the set in progress, undoable together
 
 const byId = (id) => data.exercises.find((e) => e.id === id);
-const cardOf = (id) => document.querySelector(`.ex[data-id="${id}"]`);
+const rowOf = (id) => document.querySelector(`.row[data-id="${id}"]`);
+const selected = () => byId(prefs.selected) || data.exercises[0] || null; // what the pad counts
 const trendsEx = () => byId(prefs.trendsEx) || data.exercises[0] || null;
 
 let saveWarned = false;
@@ -101,38 +100,55 @@ function renderAll() {
 function renderCount() {
   $('#today-date').textContent = fmtDate(today, { weekday: 'long', month: 'long', day: 'numeric' });
   const list = data.exercises;
-  $('#ex-list').innerHTML = list.map(cardHTML).join('');
+  const sel = selected();
+  $('#ex-list').innerHTML = list.map((ex) => rowHTML(ex, ex === sel)).join('');
+  $('#ex-list').hidden = list.length === 0;
   $('#empty').hidden = list.length > 0;
   $('#add-ex').hidden = list.length === 0;
   if (!list.length) $('#empty-chips').innerHTML = suggestionChips();
+  renderPad();
 }
 
-function cardHTML(ex) {
-  const name = esc(ex.name);
+function rowHTML(ex, isSelected) {
+  return `<li role="none"><button type="button" class="row" role="radio" aria-checked="${isSelected}" data-id="${ex.id}">
+  <span class="row-main"><span class="row-name">${esc(ex.name)}</span><span class="row-total"><b data-total>${fmt(totalOf(ex))}</b> total</span></span>
+  <span class="row-today"><b data-today>${fmt(ex.days[today] || 0)}</b><small>today</small></span>
+</button></li>`;
+}
+
+// The pad shows the selected exercise, today's count and the undo for the set in progress.
+function renderPad() {
+  const ex = selected();
+  const show = tab === 'count' && !!ex;
+  $('#pad').hidden = !show;
+  document.body.classList.toggle('with-pad', show);
+  if (!ex) return;
+  const n = ex.days[today] || 0;
+  $('#pad-count').textContent = fmt(n);
+  $('#pad-name').textContent = ex.name;
+  $('#pad-ex').setAttribute('aria-label', `${ex.name}: ${fmt(n)} today. Edit exercise`);
+  for (const b of document.querySelectorAll('#pad [data-add]')) b.setAttribute('aria-label', `Add ${b.dataset.add} to ${ex.name}`);
   const set = sets.get(ex.id);
-  const hap = switchHaptics && prefs.haptics ? '<input type="checkbox" switch class="hap" tabindex="-1" aria-hidden="true">' : '';
-  return `<li class="card ex" data-id="${ex.id}">
-  <div class="ex-top">
-    <button type="button" class="ex-name" data-act="edit" aria-label="${name}: edit"><span>${name}</span>${svg(ICON.more, 'fill')}</button>
-    <div class="ex-today"><b data-today>${fmt(ex.days[today] || 0)}</b>today</div>
-  </div>
-  <div class="ex-sub">
-    <span><b data-total>${fmt(totalOf(ex))}</b> total</span>
-    <button type="button" class="undo" data-act="undo"${set ? '' : ' hidden'}>${svg(ICON.undo)}<span>Undo <b>+${fmt(set?.n ?? 0)}</b></span></button>
-  </div>
-  <div class="ex-btns">${STEPS.map((n) => `<span class="add-wrap"><button type="button" class="add" data-add="${n}" aria-label="Add ${n} ${name}">+${n}</button>${hap}</span>`).join('')}</div>
-</li>`;
+  $('#pad-undo').hidden = !set;
+  if (set) $('#pad-undo-n').textContent = `+${fmt(set.n)}`;
 }
 
-function refreshCard(id) {
+function refreshExercise(id) {
   const ex = byId(id);
-  const card = cardOf(id);
-  if (!ex || !card) return;
-  $('[data-today]', card).textContent = fmt(ex.days[today] || 0);
-  $('[data-total]', card).textContent = fmt(totalOf(ex));
-  const set = sets.get(id);
-  $('.undo', card).hidden = !set;
-  if (set) $('.undo b', card).textContent = `+${fmt(set.n)}`;
+  const row = rowOf(id);
+  if (ex && row) {
+    $('[data-today]', row).textContent = fmt(ex.days[today] || 0);
+    $('[data-total]', row).textContent = fmt(totalOf(ex));
+  }
+  if (selected()?.id === id) renderPad();
+}
+
+function selectExercise(id) {
+  if (!byId(id) || selected()?.id === id) return;
+  prefs.selected = id;
+  savePrefs(prefs);
+  for (const row of document.querySelectorAll('.row')) row.setAttribute('aria-checked', String(row.dataset.id === id));
+  renderPad();
 }
 
 function suggestionChips() {
@@ -160,9 +176,9 @@ function addReps(id, n) {
   set.n += n;
   clearTimeout(set.timer);
   set.timer = setTimeout(() => clearSet(id), SET_MS);
-  refreshCard(id);
+  refreshExercise(id);
   if (!reducedMotion.matches) {
-    $('[data-today]', cardOf(id))?.animate([{ transform: 'scale(1.18)' }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.3,1)' });
+    $('#pad-count').animate([{ transform: 'scale(1.18)' }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.3,1)' });
   }
   announce(`${ex.name}: ${fmt(ex.days[today])} today`);
 }
@@ -172,7 +188,7 @@ function clearSet(id) {
   if (!set) return;
   clearTimeout(set.timer);
   sets.delete(id);
-  refreshCard(id);
+  refreshExercise(id);
 }
 
 function clearAllSets() {
@@ -194,7 +210,7 @@ function undoSet(id) {
 }
 
 function buzz() {
-  if (prefs.haptics && !switchHaptics) navigator.vibrate?.(15);
+  if (prefs.haptics) navigator.vibrate?.(15);
 }
 
 function nameError(name, exceptId) {
@@ -210,10 +226,12 @@ function addExercise(raw) {
   if (err) return err;
   const ex = newExercise(name);
   data.exercises.push(ex);
+  prefs.selected = ex.id; // start counting the new exercise right away
+  savePrefs(prefs);
   persist();
   requestPersistence();
   renderAll();
-  requestAnimationFrame(() => cardOf(ex.id)?.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' }));
+  requestAnimationFrame(() => rowOf(ex.id)?.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' }));
   return '';
 }
 
@@ -737,6 +755,7 @@ function showTab(name) {
     else b.removeAttribute('aria-current');
   }
   if (name === 'trends') renderTrends();
+  renderPad();
   window.scrollTo(0, 0);
 }
 
@@ -819,55 +838,60 @@ function checkForUpdate() {
 
 // ---------- Events ----------
 
-// Only deliberate taps count. A touch that lands while the page is still scrolling
-// (to stop a fling), or that turns into a scroll or a slide, is ignored.
-let press = null; // the press that will produce the next click in the exercise list
+// Only deliberate presses count. In the scrolling list, a touch that lands while the
+// page is still moving (to stop a fling) or that turns into a scroll is ignored, so
+// flicking through the list can't change the selection. The pad never scrolls; there
+// only a press that slides away is ignored.
+let press = null; // the press that will produce the next click in the list or the pad
 let lastScrollAt = -1e9;
-let scrollIdle = 0;
 
 addEventListener('scroll', () => {
   lastScrollAt = performance.now();
-  if (press) press.moved = true;
-  // Keep a scroll-stopping touch off the iPhone haptic switches, so it can't toggle one.
-  if (!scrollIdle) $('#ex-list').classList.add('scrolling');
-  clearTimeout(scrollIdle);
-  scrollIdle = setTimeout(() => {
-    scrollIdle = 0;
-    $('#ex-list').classList.remove('scrolling');
-  }, 150);
+  if (press?.inList) press.moved = true;
 }, { passive: true });
 
-$('#ex-list').addEventListener('pointerdown', (e) => {
-  const now = performance.now();
-  press = { x: e.clientX, y: e.clientY, top: scrollY, at: now, moved: now - lastScrollAt < 100 };
-}, true);
+function trackPresses(el, inList) {
+  el.addEventListener('pointerdown', (e) => {
+    const now = performance.now();
+    press = { x: e.clientX, y: e.clientY, top: scrollY, at: now, inList, moved: inList && now - lastScrollAt < 100 };
+  }, true);
+  el.addEventListener('pointermove', (e) => {
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 12) press.moved = true;
+  }, true);
+  el.addEventListener('pointercancel', () => {
+    if (press) press.moved = true;
+  }, true);
+}
 
-$('#ex-list').addEventListener('pointermove', (e) => {
-  if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 12) press.moved = true;
-}, true);
-
-$('#ex-list').addEventListener('pointercancel', () => {
-  if (press) press.moved = true;
-}, true);
+trackPresses($('#ex-list'), true);
+trackPresses($('#pad'), false);
 
 function deliberate(e) {
   const p = press;
   press = null;
   // Keyboard and screen-reader activations have no press (or a long-gone one).
   if (!p || e.detail === 0 || performance.now() - p.at > 5000) return true;
-  return !p.moved && Math.abs(scrollY - p.top) < 3;
+  return !p.moved && (!p.inList || Math.abs(scrollY - p.top) < 3);
 }
 
 $('#ex-list').addEventListener('click', (e) => {
-  // On iPhone the tap lands on the invisible haptic switch that covers its button.
-  const target = e.target.classList?.contains('hap') ? e.target.previousElementSibling : e.target;
-  const btn = target.closest('button');
-  const id = btn?.closest('.ex')?.dataset.id;
-  if (!id || !deliberate(e)) return;
-  if (btn.dataset.add) addReps(id, Number(btn.dataset.add));
-  else if (btn.dataset.act === 'undo') undoSet(id);
-  else if (btn.dataset.act === 'edit') openEdit(id);
+  const row = e.target.closest('.row');
+  if (row && deliberate(e)) selectExercise(row.dataset.id);
 });
+
+$('#pad').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  const ex = selected();
+  if (!btn || !ex || !deliberate(e)) return;
+  if (btn.dataset.add) addReps(ex.id, Number(btn.dataset.add));
+  else if (btn.id === 'pad-undo') undoSet(ex.id);
+  else if (btn.id === 'pad-ex') openEdit(ex.id);
+});
+
+// The pad covers the bottom of the page; keep its height in a CSS variable for spacing.
+new ResizeObserver(() => {
+  if ($('#pad').offsetHeight) document.documentElement.style.setProperty('--pad-h', `${$('#pad').offsetHeight}px`);
+}).observe($('#pad'));
 
 document.addEventListener('click', (e) => {
   const el = e.target.closest?.('[data-close], [data-suggest], [data-open-add], [data-go]');
@@ -1036,7 +1060,6 @@ $('#pref-haptics').addEventListener('change', (e) => {
   prefs.haptics = e.target.checked;
   savePrefs(prefs);
   buzz();
-  if (switchHaptics) renderCount(); // adds or removes the haptic switches
 });
 
 $('#toast-btn').addEventListener('click', () => {
@@ -1097,6 +1120,7 @@ document.addEventListener('touchstart', () => {}, { passive: true });
 // ---------- Start ----------
 
 $('#brand-version').textContent = `v${VERSION}`;
+$('#haptics-sec').hidden = !('vibrate' in navigator); // iPhone has no vibration API
 renderCount();
 showTab(tabFromURL());
 renderInstall();
