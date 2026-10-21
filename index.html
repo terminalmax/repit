@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>repit</title>
+  <meta name="description" content="A fast rep counter with trends and goals. Works offline, and your data stays on your device.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f3f3f5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="repit">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="modulepreload" href="js/dates.js">
+  <link rel="modulepreload" href="js/store.js">
+  <link rel="modulepreload" href="js/chart.js">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5v13M10.33 5.5v13M13.67 5.5v13M17 5.5v13M4.5 15.5l15-7"/></svg>
+      <span>repit</span>
+    </div>
+    <button type="button" class="icon-btn" id="open-settings" aria-label="Settings and backup">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <section id="view-count" aria-labelledby="count-title">
+      <div class="view-head">
+        <h1 id="count-title">Today</h1>
+        <p id="today-date"></p>
+      </div>
+
+      <div class="banner" id="install-banner" hidden>
+        <p id="install-banner-text"></p>
+        <button type="button" class="btn small primary" id="install-banner-btn" hidden>Install</button>
+        <button type="button" class="icon-btn" id="install-banner-close" aria-label="Dismiss">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <ul class="ex-list" id="ex-list"></ul>
+
+      <button type="button" class="add-ex" id="add-ex" hidden>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Add exercise
+      </button>
+
+      <div class="empty" id="empty" hidden>
+        <svg class="ico art" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5v13M10.33 5.5v13M13.67 5.5v13M17 5.5v13M4.5 15.5l15-7"/></svg>
+        <h2>Start counting</h2>
+        <p>Pick an exercise, then tap <b>+1</b>, <b>+5</b> or <b>+10</b> as you finish reps.</p>
+        <div class="chips" id="empty-chips"></div>
+        <button type="button" class="btn primary" data-open-add>Add your own</button>
+      </div>
+    </section>
+
+    <section id="view-trends" aria-labelledby="trends-title" hidden>
+      <div class="view-head">
+        <h1 id="trends-title">Trends</h1>
+      </div>
+
+      <div id="tr-main">
+        <div class="picker" id="tr-pick" role="radiogroup" aria-label="Exercise"></div>
+
+        <div class="tiles" id="tr-tiles"></div>
+
+        <div class="sec-head">
+          <h2>Activity</h2>
+          <div class="seg" id="tr-range" role="radiogroup" aria-label="Chart range">
+            <button type="button" role="radio" data-range="1m" aria-label="1 month">1M</button>
+            <button type="button" role="radio" data-range="6m" aria-label="6 months">6M</button>
+            <button type="button" role="radio" data-range="1y" aria-label="1 year">1Y</button>
+          </div>
+        </div>
+        <figure class="card chart-card">
+          <div class="readout" aria-live="polite">
+            <div class="ro-label" id="ro-label"></div>
+            <div class="ro-value"><span id="ro-value"></span> <small id="ro-unit"></small></div>
+            <div class="ro-sub" id="ro-sub"></div>
+          </div>
+          <div class="chart" id="tr-chart" role="group" tabindex="0"></div>
+          <details class="data">
+            <summary>Show data</summary>
+            <table id="tr-table"></table>
+          </details>
+        </figure>
+
+        <div class="sec-head"><h2>Goals</h2></div>
+        <div class="goals" id="tr-goals"></div>
+      </div>
+
+      <div class="empty" id="tr-empty" hidden>
+        <svg class="ico art" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7M10 20V5M15 20v-9M20 20V9"/></svg>
+        <h2>No trends yet</h2>
+        <p>Add an exercise and log a few reps to see your progress and set goals.</p>
+        <button type="button" class="btn primary" data-go="count">Start counting</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Pages">
+    <button type="button" class="tab" data-tab="count">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5v13M10.33 5.5v13M13.67 5.5v13M17 5.5v13M4.5 15.5l15-7"/></svg>
+      Count
+    </button>
+    <button type="button" class="tab" data-tab="trends">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7M10 20V5M15 20v-9M20 20V9"/></svg>
+      Trends
+    </button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span id="toast-msg"></span>
+    <button type="button" id="toast-btn" hidden></button>
+  </div>
+  <div class="sr-only" id="announce" aria-live="polite"></div>
+
+  <!-- New exercise -->
+  <dialog id="dlg-add" class="dlg" aria-labelledby="add-title">
+    <form class="dlg-body" id="form-add" novalidate>
+      <h2 id="add-title">New exercise</h2>
+      <label class="field">
+        <span>Name</span>
+        <input class="input" id="add-name" type="text" maxlength="40" autocomplete="off" autocapitalize="words" enterkeyhint="done" placeholder="e.g. Push-ups" autofocus>
+      </label>
+      <p class="err" id="add-err" role="alert"></p>
+      <div class="chips start" id="add-chips"></div>
+      <div class="actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit exercise -->
+  <dialog id="dlg-edit" class="dlg" aria-labelledby="edit-title">
+    <form class="dlg-body" id="form-edit" novalidate>
+      <h2 id="edit-title" tabindex="-1" autofocus>Edit exercise</h2>
+      <label class="field">
+        <span>Name</span>
+        <input class="input" id="ed-name" type="text" maxlength="40" autocomplete="off" autocapitalize="words" enterkeyhint="done">
+      </label>
+      <p class="err" id="ed-err" role="alert"></p>
+      <div class="field">
+        <span id="ed-fix-label">Fix a day’s count</span>
+        <div class="fix">
+          <input class="input" id="ed-day" type="date" aria-label="Day">
+          <div class="stepper">
+            <button type="button" data-step="-1" aria-label="One rep less">−</button>
+            <input id="ed-count" type="text" inputmode="numeric" autocomplete="off" aria-label="Reps on that day">
+            <button type="button" data-step="1" aria-label="One rep more">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-btns">
+        <button type="button" class="btn" id="ed-up">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+          Move up
+        </button>
+        <button type="button" class="btn" id="ed-down">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M18.5 12.5 12 19l-6.5-6.5"/></svg>
+          Move down
+        </button>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn text-danger" id="ed-delete">Delete</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Goal -->
+  <dialog id="dlg-goal" class="dlg" aria-labelledby="goal-title">
+    <form class="dlg-body" id="form-goal" novalidate>
+      <h2 id="goal-title">Goal</h2>
+      <p class="lead" id="goal-ex"></p>
+      <label class="field">
+        <span>Total reps</span>
+        <input class="input" id="goal-target" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" autofocus>
+      </label>
+      <p class="hint" id="goal-hint"></p>
+      <label class="field">
+        <span>Starts on</span>
+        <input class="input" id="goal-start" type="date">
+      </label>
+      <p class="hint" id="goal-range"></p>
+      <p class="err" id="goal-err" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="btn text-danger" id="goal-remove">Remove</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm -->
+  <dialog id="dlg-confirm" class="dlg" aria-labelledby="cf-title">
+    <form class="dlg-body" method="dialog">
+      <h2 id="cf-title" tabindex="-1" autofocus></h2>
+      <p class="lead" id="cf-text"></p>
+      <div class="actions">
+        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn primary" value="ok" id="cf-ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings & backup -->
+  <dialog id="dlg-settings" class="dlg" aria-labelledby="set-title">
+    <div class="dlg-body">
+      <div class="dlg-head">
+        <h2 id="set-title" tabindex="-1" autofocus>Settings</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <section class="set-sec">
+        <h3>Backup</h3>
+        <p>Your reps are stored only on this device. Export a backup file to keep them safe or move them to another phone.</p>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="do-export">Export backup</button>
+          <button type="button" class="btn" id="do-import">Import backup</button>
+        </div>
+        <p class="hint" id="backup-status"></p>
+        <p class="msg" id="set-msg" role="status"></p>
+        <details class="text-backup">
+          <summary>Copy or paste as text instead</summary>
+          <textarea class="input" id="backup-text" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste a backup here"></textarea>
+          <div class="btn-row">
+            <button type="button" class="btn" id="do-copy">Copy my data</button>
+            <button type="button" class="btn" id="do-paste">Import pasted text</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="set-sec" id="install-sec" hidden>
+        <h3>Install</h3>
+        <p id="install-help"></p>
+        <div class="btn-row" id="install-row" hidden>
+          <button type="button" class="btn primary" id="install-btn">Install repit</button>
+        </div>
+      </section>
+
+      <section class="set-sec">
+        <label class="toggle-row">
+          <span>Haptic feedback<small>A light tap on every count, where the phone supports it</small></span>
+          <input type="checkbox" class="toggle" id="pref-haptics" switch>
+        </label>
+      </section>
+
+      <section class="set-sec">
+        <button type="button" class="btn text-danger flush" id="do-wipe">Delete all data</button>
+      </section>
+
+      <p class="foot" id="app-version"></p>
+    </div>
+  </dialog>
+
+  <input type="file" id="file-import" hidden>
+</body>
+</html>

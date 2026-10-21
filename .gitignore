@@ -1,0 +1,23 @@
+# Secrets and credentials: never commit these
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+.netrc
+.npmrc
+.git-credentials
+secrets/
+*.secret
+*.token
+
+# Local tooling and editor settings
+.claude/
+.vscode/
+.idea/
+*.swp
+
+# OS clutter
+.DS_Store
+Thumbs.db
