@@ -72,4 +72,4 @@ python3 -m http.server 8000
 | `sw.js` | Offline cache (service worker) |
 | `manifest.webmanifest`, `icons/` | Install metadata and app icons |
 
-The service worker serves the app from its cache and refreshes it in the background, so a deploy reaches installed copies within a launch or two. To push an update right away, bump `VERSION` in `sw.js` (and in `js/app.js` so the settings screen shows it). Open copies then offer a **Reload**.
+The service worker serves the app from its cache and refreshes it in the background, so a deploy reaches installed copies within a launch or two. To push an update right away, bump `VERSION` in `sw.js` and in `js/app.js` (the app shows it next to its name and in **Settings → About**). Open copies then offer a **Reload**, and **Check for updates** in Settings fetches the new version on demand.

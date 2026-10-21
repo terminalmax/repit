@@ -8,7 +8,7 @@ import {
 import { drawBars } from './chart.js';
 import { drawShareImage } from './share.js';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const STEPS = [1, 5, 10];
 const SET_MS = 6000; // taps on one exercise closer together than this form one undoable set
 const SUGGESTIONS = ['Push-ups', 'Squats', 'Pull-ups', 'Sit-ups', 'Burpees', 'Lunges', 'Dips', 'Crunches', 'Jumping jacks', 'Kettlebell swings'];
@@ -500,7 +500,8 @@ function openSettings() {
   $('#pref-haptics').checked = prefs.haptics;
   $('#backup-status').textContent = prefs.lastBackup ? `Last backup: ${longDate(prefs.lastBackup)}.` : 'You haven’t exported a backup from this device yet.';
   $('#backup-text').value = '';
-  $('#app-version').textContent = `repit ${VERSION} · works offline · no account, no tracking`;
+  $('#app-version').textContent = VERSION;
+  if (!updating) $('#update-msg').textContent = '';
   setMsg('');
   renderInstall();
   openDialog('#dlg-settings');
@@ -773,13 +774,41 @@ function scheduleMidnight() {
 
 let swReg = null;
 let lastUpdateCheck = Date.now();
+let updating = false; // the person asked to update: reload as soon as the new version takes over
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   const hadController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('./sw.js').then((reg) => { swReg = reg; }, () => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (hadController) toast('repit was updated', 'Reload', () => location.reload(), 10000);
+    if (updating) location.reload();
+    else if (hadController) toast('repit was updated', 'Reload', () => location.reload(), 10000);
   });
+}
+
+async function checkForUpdateNow() {
+  const say = (text) => { $('#update-msg').textContent = text; };
+  if (!swReg) return say('Updates aren’t available in this browser.');
+  if (!navigator.onLine) return say('You’re offline. Connect to the internet to check for updates.');
+  const btn = $('#check-update');
+  btn.disabled = true;
+  say('Checking…');
+  try {
+    await swReg.update();
+    lastUpdateCheck = Date.now();
+    const next = swReg.installing || swReg.waiting;
+    if (!next) return say(`You’re on the latest version (${VERSION}).`);
+    updating = true;
+    say('Downloading the update. repit will reload when it’s ready.');
+    next.addEventListener('statechange', () => {
+      if (next.state !== 'redundant') return;
+      updating = false;
+      say('The update didn’t finish downloading. Try again later.');
+    });
+  } catch {
+    say('Couldn’t reach the server. Try again when you’re online.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function checkForUpdate() {
@@ -941,6 +970,7 @@ $('#goal-remove').addEventListener('click', () => {
 
 $('#open-settings').addEventListener('click', openSettings);
 $('#share-today').addEventListener('click', shareToday);
+$('#check-update').addEventListener('click', checkForUpdateNow);
 $('#do-export').addEventListener('click', exportBackup);
 $('#do-import').addEventListener('click', () => $('#file-import').click());
 $('#do-copy').addEventListener('click', copyBackup);
@@ -1027,6 +1057,7 @@ document.addEventListener('touchstart', () => {}, { passive: true });
 
 // ---------- Start ----------
 
+$('#brand-version').textContent = `v${VERSION}`;
 renderCount();
 showTab(tabFromURL());
 renderInstall();

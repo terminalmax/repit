@@ -28,6 +28,7 @@
     <div class="brand">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5v13M10.33 5.5v13M13.67 5.5v13M17 5.5v13M4.5 15.5l15-7"/></svg>
       <span>repit</span>
+      <span class="version" id="brand-version"></span>
     </div>
     <div class="top-actions">
       <button type="button" class="icon-btn" id="share-today" aria-label="Share today's reps">
@@ -269,10 +270,17 @@
       </section>
 
       <section class="set-sec">
-        <button type="button" class="btn text-danger flush" id="do-wipe">Delete all data</button>
+        <h3>About</h3>
+        <div class="about">
+          <p>Version <b id="app-version"></b><small>Works offline · no account, no tracking</small></p>
+          <button type="button" class="btn small" id="check-update">Check for updates</button>
+        </div>
+        <p class="msg" id="update-msg" role="status"></p>
       </section>
 
-      <p class="foot" id="app-version"></p>
+      <section class="set-sec">
+        <button type="button" class="btn text-danger flush" id="do-wipe">Delete all data</button>
+      </section>
     </div>
   </dialog>
 
