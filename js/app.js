@@ -8,7 +8,7 @@ import {
 import { drawBars } from './chart.js';
 import { drawShareImage } from './share.js';
 
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 const STEPS = [1, 5, 10];
 const SET_MS = 6000; // taps on one exercise closer together than this form one undoable set
 const SUGGESTIONS = ['Push-ups', 'Squats', 'Pull-ups', 'Sit-ups', 'Burpees', 'Lunges', 'Dips', 'Crunches', 'Jumping jacks', 'Kettlebell swings'];
@@ -41,6 +41,9 @@ const rangeFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'n
 const fmtRange = (a, b) => rangeFormat.formatRange?.(dateOf(a), dateOf(b)) ?? `${longDate(a)} – ${longDate(b)}`;
 
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const canVibrate = 'vibrate' in navigator; // Android
+// Safari has no Vibration API, but a real tap on a native switch control plays a system haptic (iOS 17.4+).
+const switchHaptics = isIOS && 'switch' in HTMLInputElement.prototype;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const weekFirstDay = (() => {
@@ -210,7 +213,18 @@ function undoSet(id) {
 }
 
 function buzz() {
-  if (prefs.haptics) navigator.vibrate?.(15);
+  if (prefs.haptics && canVibrate) navigator.vibrate(20);
+}
+
+// On iPhone, put an invisible switch over each pad button (or take them away) so taps play a haptic.
+// The pad is fixed and never scrolls, so a scroll can't land on one.
+function syncHaptics() {
+  const on = switchHaptics && prefs.haptics;
+  for (const wrap of document.querySelectorAll('#pad .add-wrap')) {
+    const hap = wrap.querySelector('.hap');
+    if (on && !hap) wrap.insertAdjacentHTML('beforeend', '<input type="checkbox" switch class="hap" tabindex="-1" aria-hidden="true">');
+    else if (!on && hap) hap.remove();
+  }
 }
 
 function nameError(name, exceptId) {
@@ -880,7 +894,8 @@ $('#ex-list').addEventListener('click', (e) => {
 });
 
 $('#pad').addEventListener('click', (e) => {
-  const btn = e.target.closest('button');
+  // On iPhone the tap lands on the invisible haptic switch that covers its button.
+  const btn = e.target.classList?.contains('hap') ? e.target.previousElementSibling : e.target.closest('button');
   const ex = selected();
   if (!btn || !ex || !deliberate(e)) return;
   if (btn.dataset.add) addReps(ex.id, Number(btn.dataset.add));
@@ -1059,6 +1074,7 @@ $('#file-import').addEventListener('change', async (e) => {
 $('#pref-haptics').addEventListener('change', (e) => {
   prefs.haptics = e.target.checked;
   savePrefs(prefs);
+  syncHaptics();
   buzz();
 });
 
@@ -1120,7 +1136,8 @@ document.addEventListener('touchstart', () => {}, { passive: true });
 // ---------- Start ----------
 
 $('#brand-version').textContent = `v${VERSION}`;
-$('#haptics-sec').hidden = !('vibrate' in navigator); // iPhone has no vibration API
+$('#haptics-sec').hidden = !(canVibrate || switchHaptics);
+syncHaptics();
 renderCount();
 showTab(tabFromURL());
 renderInstall();

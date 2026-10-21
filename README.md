@@ -7,6 +7,7 @@ A fast, offline rep counter for iPhone and Android. It's a plain web app (PWA), 
 - **Goals**: set a total-rep goal per exercise for **1 month, 6 months or 1 year**. A goal repeats every period from its start date and shows progress, pace and the reps per day needed to finish.
 - **Share**: the share button at the top makes an image of today's reps and goal progress and opens your phone's share sheet (where sharing isn't available, it saves the image instead).
 - **Your data stays on your device** (browser `localStorage`). Export a backup file and import it anywhere. There is no server, no analytics and no tracking.
+- **Haptics**: a light vibration on every +1/+5/+10 tap. Android uses the vibration API. iPhone has no such API, so an invisible native switch over each button produces the system haptic (iOS 17.4+). Both can be switched off in Settings.
 - Works offline, follows the system light/dark setting, and installs to the home screen.
 
 ## Put it on GitHub Pages
