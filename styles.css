@@ -159,7 +159,7 @@ main {
   color: var(--ink-2);
 }
 
-.topbar .icon-btn { margin-right: -10px; }
+.top-actions { display: flex; gap: 2px; margin-right: -10px; }
 .icon-btn:active { background: var(--surface-2); }
 
 main { padding-bottom: calc(var(--tabbar) + var(--safe-b) + 28px); }
@@ -184,7 +184,7 @@ h1 {
 
 /* ---------- Count ---------- */
 
-.ex-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ex-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0; padding: 0; list-style: none; }
 
 .ex {
   padding: 10px 14px 14px 16px;

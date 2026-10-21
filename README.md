@@ -5,6 +5,7 @@ A fast, offline rep counter for iPhone and Android. It's a plain web app (PWA), 
 - **Count**: every exercise shows today's reps and the all-time total, with big **+1 / +5 / +10** buttons. Taps in quick succession form a set that you can undo in one go.
 - **Trends**: last 7 days, all-time total, best day, streak, and a bar chart for the last 30 days, 26 weeks or 12 months.
 - **Goals**: set a total-rep goal per exercise for **1 month, 6 months or 1 year**. A goal repeats every period from its start date and shows progress, pace and the reps per day needed to finish.
+- **Share**: the share button at the top makes an image of today's reps and goal progress and opens your phone's share sheet (where sharing isn't available, it saves the image instead).
 - **Your data stays on your device** (browser `localStorage`). Export a backup file and import it anywhere. There is no server, no analytics and no tracking.
 - Works offline, follows the system light/dark setting, and installs to the home screen.
 
@@ -65,6 +66,7 @@ python3 -m http.server 8000
 | `styles.css` | All styling, light and dark |
 | `js/app.js` | UI: counting, trends, goals, backup, install prompt |
 | `js/chart.js` | The SVG bar chart |
+| `js/share.js` | Draws the share image |
 | `js/store.js` | Storage, backup format and validation |
 | `js/dates.js` | Calendar-day and goal-period math |
 | `sw.js` | Offline cache (service worker) |

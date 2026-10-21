@@ -6,8 +6,9 @@ import {
   parseBackup, backupJSON, newExercise, cleanName, totalOf, sumRange,
 } from './store.js';
 import { drawBars } from './chart.js';
+import { drawShareImage } from './share.js';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const STEPS = [1, 5, 10];
 const SET_MS = 6000; // taps on one exercise closer together than this form one undoable set
 const SUGGESTIONS = ['Push-ups', 'Squats', 'Pull-ups', 'Sit-ups', 'Burpees', 'Lunges', 'Dips', 'Crunches', 'Jumping jacks', 'Kettlebell swings'];
@@ -512,8 +513,8 @@ function markBackedUp(msg) {
   setMsg(msg);
 }
 
-function download(text, name) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement('a'), { href: url, download: name });
   document.body.append(a);
   a.click();
@@ -539,7 +540,7 @@ async function exportBackup() {
       }
     }
   }
-  download(json, name);
+  download(new Blob([json], { type: 'application/json' }), name);
   markBackedUp(`Downloaded ${name}.`);
 }
 
@@ -594,6 +595,55 @@ async function wipeAll() {
     persist();
     renderAll();
   }, 8000);
+}
+
+// ---------- Share ----------
+
+const SHARE_MAX = 6; // exercises shown in the image
+
+function dataURLToBlob(url) {
+  const [head, body] = url.split(',');
+  const bin = atob(body);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: head.slice(5, head.indexOf(';')) });
+}
+
+function shareToday() {
+  checkDay();
+  const logged = data.exercises.filter((ex) => ex.days[today] > 0);
+  if (!logged.length) return toast('Log some reps first, then share your day.');
+  const items = logged.slice(0, SHARE_MAX).map((ex) => {
+    let goal = null;
+    for (const p of Object.keys(PERIODS)) {
+      const g = goalProgress(ex, p);
+      if (!g?.started) continue;
+      const ratio = g.done / g.target;
+      goal = { ratio, pct: `${Math.floor(ratio * 100)}%`, caption: `${fmt(g.done)} of ${fmt(g.target)} · ${GOAL_TITLE[p]}` };
+      break;
+    }
+    return { name: ex.name, value: fmt(ex.days[today]), goal };
+  });
+  const total = logged.reduce((sum, ex) => sum + ex.days[today], 0);
+  const canvas = drawShareImage({
+    date: fmtDate(today, { weekday: 'long', month: 'long', day: 'numeric' }),
+    total: fmt(total),
+    unit: total === 1 ? 'rep' : 'reps',
+    items,
+    more: logged.length > SHARE_MAX ? `+${logged.length - SHARE_MAX} more` : '',
+    footer: (location.host + location.pathname).replace(/\/(index\.html)?$/, ''),
+  });
+  // Encode synchronously so navigator.share still runs inside the tap's user gesture.
+  const blob = dataURLToBlob(canvas.toDataURL('image/png'));
+  const file = new File([blob], `repit-${today}.png`, { type: 'image/png' });
+  const saveInstead = () => {
+    download(blob, file.name);
+    toast(`Saved ${file.name}`);
+  };
+  if (!navigator.canShare?.({ files: [file] })) return saveInstead();
+  navigator.share({ files: [file] }).catch((err) => {
+    if (err.name !== 'AbortError') saveInstead();
+  });
 }
 
 // ---------- Install ----------
@@ -890,6 +940,7 @@ $('#goal-remove').addEventListener('click', () => {
 });
 
 $('#open-settings').addEventListener('click', openSettings);
+$('#share-today').addEventListener('click', shareToday);
 $('#do-export').addEventListener('click', exportBackup);
 $('#do-import').addEventListener('click', () => $('#file-import').click());
 $('#do-copy').addEventListener('click', copyBackup);
