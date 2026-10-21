@@ -2,7 +2,7 @@
 // and refreshed in the background, so a deploy shows up on the next launch.
 // Bump VERSION when you change any file to fetch everything again right away.
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const CACHE = `repit-${VERSION}`;
 const INDEX = new URL('./index.html', self.location).href;
 const ROOT = new URL('./', self.location).href;

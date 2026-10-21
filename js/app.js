@@ -8,7 +8,7 @@ import {
 import { drawBars } from './chart.js';
 import { drawShareImage } from './share.js';
 
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const STEPS = [1, 5, 10];
 const SET_MS = 6000; // taps on one exercise closer together than this form one undoable set
 const SUGGESTIONS = ['Push-ups', 'Squats', 'Pull-ups', 'Sit-ups', 'Burpees', 'Lunges', 'Dips', 'Crunches', 'Jumping jacks', 'Kettlebell swings'];
@@ -819,12 +819,51 @@ function checkForUpdate() {
 
 // ---------- Events ----------
 
+// Only deliberate taps count. A touch that lands while the page is still scrolling
+// (to stop a fling), or that turns into a scroll or a slide, is ignored.
+let press = null; // the press that will produce the next click in the exercise list
+let lastScrollAt = -1e9;
+let scrollIdle = 0;
+
+addEventListener('scroll', () => {
+  lastScrollAt = performance.now();
+  if (press) press.moved = true;
+  // Keep a scroll-stopping touch off the iPhone haptic switches, so it can't toggle one.
+  if (!scrollIdle) $('#ex-list').classList.add('scrolling');
+  clearTimeout(scrollIdle);
+  scrollIdle = setTimeout(() => {
+    scrollIdle = 0;
+    $('#ex-list').classList.remove('scrolling');
+  }, 150);
+}, { passive: true });
+
+$('#ex-list').addEventListener('pointerdown', (e) => {
+  const now = performance.now();
+  press = { x: e.clientX, y: e.clientY, top: scrollY, at: now, moved: now - lastScrollAt < 100 };
+}, true);
+
+$('#ex-list').addEventListener('pointermove', (e) => {
+  if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 12) press.moved = true;
+}, true);
+
+$('#ex-list').addEventListener('pointercancel', () => {
+  if (press) press.moved = true;
+}, true);
+
+function deliberate(e) {
+  const p = press;
+  press = null;
+  // Keyboard and screen-reader activations have no press (or a long-gone one).
+  if (!p || e.detail === 0 || performance.now() - p.at > 5000) return true;
+  return !p.moved && Math.abs(scrollY - p.top) < 3;
+}
+
 $('#ex-list').addEventListener('click', (e) => {
   // On iPhone the tap lands on the invisible haptic switch that covers its button.
   const target = e.target.classList?.contains('hap') ? e.target.previousElementSibling : e.target;
   const btn = target.closest('button');
   const id = btn?.closest('.ex')?.dataset.id;
-  if (!id) return;
+  if (!id || !deliberate(e)) return;
   if (btn.dataset.add) addReps(id, Number(btn.dataset.add));
   else if (btn.dataset.act === 'undo') undoSet(id);
   else if (btn.dataset.act === 'edit') openEdit(id);

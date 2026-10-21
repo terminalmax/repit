@@ -308,6 +308,8 @@ h1 {
   cursor: pointer;
 }
 
+.scrolling .hap { pointer-events: none; }
+
 .add-ex {
   display: flex;
   align-items: center;
